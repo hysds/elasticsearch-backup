@@ -6,7 +6,7 @@ from elasticsearch.exceptions import NotFoundError, RequestError, ElasticsearchE
 from hysds.es_util import get_mozart_es, get_grq_es
 
 
-def backup(component, backup_root):
+def backup(component, backup_root, only_index=None):
     """Recurse over all indices at the ElasticSearch URL and backup indices."""
 
     # get ES object
@@ -23,6 +23,12 @@ def backup(component, backup_root):
     # get all indices
     c = elasticsearch.client.IndicesClient(es.es)
     indices = sorted(c.get_alias().keys())
+
+    # Only use indices that have the only_index prefix
+    if only_index is not None:
+        print("Filtering indices with prefix %s" % only_index)
+        indices = [idx for idx in indices if idx.startswith(only_index)]
+        print("Backing up only indices: %s" % indices)
 
     # loop over each index and save settings, mapping, and docs
     for idx in indices:
@@ -64,9 +70,14 @@ def main():
     parser = argparse.ArgumentParser(description="Backup all ElasticSearch indexes.")
     parser.add_argument("component", choices=['mozart', 'grq'])
     parser.add_argument("directory", help="backup directory location")
-    args = parser.parse_args()
-    backup(args.component, args.directory)
 
+    # Add optional argument named --only-index
+    parser.add_argument("--only-index", help="backup only the specified index. \
+This argument will act as a prefix of the index name. For example, if the argument is grq_abc, \
+it will match grq_abc_2024.08, grq_abc_2024.09, and so on..")
+
+    args = parser.parse_args()
+    backup(args.component, args.directory, args.only_index)
 
 if __name__ == "__main__":
     main()
