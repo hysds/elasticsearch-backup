@@ -45,17 +45,20 @@ def restore(backup_dir, id_key='id'):
 
     # import docs
     with open(docs_file) as f:
-        for l in f:
-            j = json.loads(l)
-            del j['metadata']['orbit']
-            j['dataset'] = 'S1-IFG'
-            j['v1_import'] = True
-            r = requests.put('http://localhost:9200/%s/%s/%s' % (idx, doctype, j[id_key]), data=json.dumps(j))
-            if r.status_code != 201:
-                print(r.status_code)
-                print(r.json())
-                continue
-            else: r.raise_for_status()
+        def data_generator(f):
+            for l in f:
+                j = json.loads(l)
+                del j['metadata']['orbit']
+                j['dataset'] = 'S1-IFG'
+                j['v1_import'] = True
+                yield json.dumps({"index": {"_index": idx, "_type": doctype, "_id": j[id_key]}}) + "\n"
+                yield json.dumps(j) + "\n"
+        r = requests.post('http://localhost:9200/_bulk', data=data_generator(f),
+                          headers={'Content-Type': 'application/x-ndjson'})
+        if r.status_code != 200:
+            print(r.status_code)
+            print(r.json())
+        r.raise_for_status()
 
 
 if __name__ == "__main__":
