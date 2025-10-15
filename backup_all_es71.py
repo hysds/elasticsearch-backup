@@ -2,6 +2,7 @@
 import os, sys, requests, json, types, argparse, bz2, shutil
 import elasticsearch
 from elasticsearch.exceptions import NotFoundError, RequestError, ElasticsearchException
+from elasticsearch.helpers import scan
 
 from hysds.es_util import get_mozart_es, get_grq_es
 
@@ -57,7 +58,7 @@ def backup(component, backup_root, only_index=None):
         query = {"query": {"match_all": {}}}
         txt = os.path.join(d, "%s.docs" % idx)
         with open(txt, "w") as f:
-            for hit in es.query(body=query, index=idx):
+            for hit in scan(es.es, query=query, index=idx):
                 f.write("%s\n" % json.dumps(hit["_source"]))
         # b = os.path.join(d, '%s.docs.bz2' % idx)
         # with bz2.BZ2File(b, 'w') as f:

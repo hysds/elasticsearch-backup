@@ -2,6 +2,7 @@
 import os, sys, json, requests, argparse
 import elasticsearch
 from elasticsearch.exceptions import NotFoundError, RequestError, ElasticsearchException
+from elasticsearch.helpers import bulk
 
 from hysds.es_util import get_mozart_es, get_grq_es
 
@@ -35,10 +36,17 @@ def restore(component, backup_dir, id_key='id'):
     c.create(idx, body={'settings': settings, 'mappings': mappings}, ignore=400)
 
     # import docs
+    def doc_generator(f, idx, id_key):
+        for line in f:
+            doc = json.loads(line)
+            yield {
+                "_index": idx,
+                "_id": doc[id_key],
+                "_source": doc
+            }
+
     with open(docs_file) as f:
-        for l in f:
-            j = json.loads(l)
-            es.index_document(index=idx, body=j, id=j[id_key])
+        bulk(es.es, doc_generator(f, idx, id_key))
 
 
 def main():
