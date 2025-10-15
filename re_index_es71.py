@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import os, sys, json, requests, argparse
-import elasticsearch
-from elasticsearch.exceptions import NotFoundError, RequestError, ElasticsearchException
-from elasticsearch.helpers import bulk
+import opensearchpy
+from opensearchpy.exceptions import NotFoundError, RequestError
+from opensearchpy.helpers import bulk
 
 from hysds.es_util import get_mozart_es, get_grq_es
 
@@ -32,7 +32,7 @@ def restore(component, backup_dir, id_key='id'):
         settings = json.load(f)[idx]['settings']
 
     # create index
-    c = elasticsearch.client.IndicesClient(es.es)
+    c = opensearchpy.client.IndicesClient(es.es)
     c.create(idx, body={'settings': settings, 'mappings': mappings}, ignore=400)
 
     # import docs
