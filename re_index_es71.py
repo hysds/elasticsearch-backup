@@ -33,7 +33,7 @@ def restore(component, backup_dir, id_key='id'):
 
     # create index
     c = opensearchpy.client.IndicesClient(es.es)
-    c.create(idx, body={'settings': settings, 'mappings': mappings}, ignore=400)
+    c.create(index=idx, body={'settings': settings, 'mappings': mappings}, ignore=400)
 
     # import docs
     def doc_generator(f, idx, id_key):
