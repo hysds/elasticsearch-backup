@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, sys, requests, json, types, argparse, bz2, shutil
+import os, sys, requests, json, types, argparse, bz2, shutil, fnmatch
 import opensearchpy
 from opensearchpy.exceptions import NotFoundError, RequestError
 from opensearchpy.helpers import scan
@@ -25,10 +25,11 @@ def backup(component, backup_root, only_index=None):
     c = opensearchpy.client.IndicesClient(es.es)
     indices = sorted(c.get_alias().keys())
 
-    # Only use indices that have the only_index prefix
+    # Only use indices that match the only_index pattern(s)
     if only_index is not None:
-        print("Filtering indices with prefix %s" % only_index)
-        indices = [idx for idx in indices if idx.startswith(only_index)]
+        patterns = [p.strip() for p in only_index.split(',')]
+        print("Filtering indices with pattern(s): %s" % patterns)
+        indices = [idx for idx in indices if any(fnmatch.fnmatch(idx, pattern) for pattern in patterns)]
         print("Backing up only indices: %s" % indices)
 
     # loop over each index and save settings, mapping, and docs
@@ -73,9 +74,9 @@ def main():
     parser.add_argument("directory", help="backup directory location")
 
     # Add optional argument named --only-index
-    parser.add_argument("--only-index", help="backup only the specified index. \
-This argument will act as a prefix of the index name. For example, if the argument is grq_abc, \
-it will match grq_abc_2024.08, grq_abc_2024.09, and so on..")
+    parser.add_argument("--only-index", help="backup only indices matching the specified pattern(s). \
+Supports Unix-style wildcards (* and ?). Multiple patterns can be comma-separated. \
+Examples: 'grq_abc*' or 'grq_*_l3, grq_*_static, *_gcov'.")
 
     args = parser.parse_args()
     backup(args.component, args.directory, args.only_index)
