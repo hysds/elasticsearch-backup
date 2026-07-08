@@ -41,14 +41,14 @@ def backup(component, backup_root, only_index=None):
             os.makedirs(d)
 
         # save settings
-        settings = c.get_settings(idx)
+        settings = c.get_settings(index=idx)
         s = os.path.join(d, "%s.settings" % idx)
         with open(s, "w") as f:
             json.dump(settings, f, indent=2, sort_keys=True)
         print("Backed up settings for %s" % idx)
 
         # save mapping
-        mapping = c.get_mapping(idx)
+        mapping = c.get_mapping(index=idx)
         m = os.path.join(d, "%s.mapping" % idx)
         with open(m, "w") as f:
             json.dump(mapping, f, indent=2, sort_keys=True)
